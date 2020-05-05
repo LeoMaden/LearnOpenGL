@@ -9,6 +9,7 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "Camera.h"
+#include "Log.h"
 
 
 // Adjust viewport when window is resized.
@@ -79,6 +80,7 @@ void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 static GLuint CreateCubeVBO()
 {
 	float vertices[] = {
+	//        Position              Normal
 		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -160,6 +162,7 @@ static GLuint CreateCubeVAO()
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
+
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
 
@@ -169,34 +172,32 @@ static GLuint CreateCubeVAO()
 
 int main()
 {
+	Logger::Init();
+
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true); 
 
 	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
 
 	// Check window has been created successfully.
-	if (window == NULL)
-	{
-		std::cout << "Failed to create window" << std::endl;
-		glfwTerminate();
-		return EXIT_FAILURE;
-	}
+	ASSERT(window, "Error creating GLFW window");
 	glfwMakeContextCurrent(window);
 	
 	// Check glad has initialised.
 	int gladStatus = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-	if (gladStatus == NULL)
-	{
-		std::cout << "Failed to initialise glad" << std::endl;
-		return EXIT_FAILURE;
-	}
+	ASSERT(gladStatus, "Failed to initialise glad");
+
+	glDebugMessageCallback(OpenGLDebugCallback, nullptr);
+	glEnable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
 	// Glad and GLFW window success.
-	std::cout << "[OpenGL] " << glGetString(GL_VENDOR) << std::endl;
-	std::cout << "[OpenGL] " << glGetString(GL_RENDERER) << std::endl;
-	std::cout << "[OpenGL] " << glGetString(GL_VERSION) << std::endl;
+	LOG_INFO((const char*)glGetString(GL_VENDOR));
+	LOG_INFO(glGetString(GL_RENDERER));
+	LOG_INFO(glGetString(GL_VERSION));
 
 	glViewport(0, 0, 800, 600);
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
@@ -228,7 +229,7 @@ int main()
 	glm::vec3& cameraPos = camera.CameraPos;
 	cameraPos += glm::vec3(0.0f, 2.0f, 0.0f);
 
-	glm::vec3 lightColor(0.8f, 0.3f, 0.4f);
+	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 	// Light uniforms.
 	lightShader.Bind();
@@ -293,5 +294,6 @@ int main()
 
 
 	glfwTerminate();
+	std::cin.get();
 	return EXIT_SUCCESS;
 }

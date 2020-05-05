@@ -1,4 +1,5 @@
 #include "Shader.h"
+#include "Log.h"
 
 #include <sstream>
 #include <fstream>
@@ -12,11 +13,7 @@ static std::string ReadFromFile(const std::string& path)
 
 	file.open(path.c_str());
 
-	if (!file)
-	{
-		std::cout << "[Shader] Error opening file " << path << std::endl;
-		throw;
-	}
+	ASSERT(file, "Failed to open file: {0}", path);
 
 	char temp[256];
 	while (file.getline(temp, 256))
@@ -37,16 +34,6 @@ static GLuint CreateShader(const char* shaderSrc, GLenum type)
 
 	glShaderSource(id, 1, &shaderSrc, nullptr);
 	glCompileShader(id);
-
-	int success;
-	glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-	if (success == GL_FALSE)
-	{
-		char infoLog[512];
-		glGetShaderInfoLog(id, 512, nullptr, infoLog);
-		std::cout << "[OpenGL] Failed to compile shader\n" << infoLog << std::endl;
-		throw;
-	}
 
 	return id;
 }
