@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iostream>
 
+#include <glm/gtc/type_ptr.hpp>
+
 
 static std::string ReadFromFile(const std::string& path)
 {
@@ -69,34 +71,34 @@ void Shader::Bind()
 	glUseProgram(m_ProgramId);
 }
 
-void Shader::SetUniform1f(const std::string& name, float val)
+void Shader::SetFloat(const std::string& name, float value)
 {
 	int loc = glGetUniformLocation(m_ProgramId, name.c_str());
-	glUniform1f(loc, val);
+	glUniform1f(loc, value);
 }
 
-void Shader::SetUniform3f(const std::string& name, float v0, float v1, float v2)
+void Shader::SetVec3(const std::string& name, const glm::vec3& vec)
 {
 	int loc = glGetUniformLocation(m_ProgramId, name.c_str());
-	glUniform3f(loc, v0, v1, v2);
+	glUniform3f(loc, vec.x, vec.y, vec.z);
 }
 
-void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3)
+void Shader::SetVec4(const std::string& name, const glm::vec4& vec)
 {
 	int loc = glGetUniformLocation(m_ProgramId, name.c_str());
-	glUniform4f(loc, v0, v1, v2, v3);
+	glUniform4f(loc, vec.x, vec.y, vec.z, vec.w);
 }
 
-void Shader::SetUniformMat4fv(const std::string& name, glm::mat4 matrix)
+void Shader::SetMat4(const std::string& name, const glm::mat4& matrix)
 {
 	int loc = glGetUniformLocation(m_ProgramId, name.c_str());
-	glUniformMatrix4fv(loc, 1, GL_FALSE, &matrix[0][0]);
+	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
-void Shader::SetUniform1iv(const std::string& name, int count, int* values)
+void Shader::SetIntArray(const std::string& name, const std::vector<int>& values)
 {
 	int loc = glGetUniformLocation(m_ProgramId, name.c_str());
-	glUniform1iv(loc, count, values);
+	glUniform1iv(loc, values.data, (const GLint*)values.size());
 }
 
 

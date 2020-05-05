@@ -6,8 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Shader.h"
-#include "Texture.h"
+#include "OpenGL/Shader.h"
+#include "OpenGL/Texture.h"
 #include "Camera.h"
 #include "Log.h"
 
@@ -217,6 +217,7 @@ int main()
 		"assets/shaders/light.glsl.frag"
 	);
 
+	objShader.SetIntArray("u_Test", { 1, 2, 3 });
 
 
 	GLuint cubeVAO = CreateCubeVAO();
