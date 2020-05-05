@@ -8,7 +8,7 @@
 
 #include "OpenGL/Shader.h"
 #include "OpenGL/Texture.h"
-#include "Camera.h"
+#include "PerspectiveCamera.h"
 #include "Log.h"
 
 
@@ -18,7 +18,7 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-static Camera camera({ 0.0f, 0.0f, 5.0f }, { 0.0f, 0.0f, -1.0f });
+static PerspectiveCamera Camera(45.0f, 800.0f / 600.0f, 0.1f, 1000.0f);
 static float cameraSpeed = 0.05f;
 
 void ProcessInput(GLFWwindow* window)
@@ -29,33 +29,33 @@ void ProcessInput(GLFWwindow* window)
 	}
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		glm::vec3 forward = glm::normalize(glm::vec3(camera.Direction.x, 0.0f, camera.Direction.z));
-		camera.CameraPos += cameraSpeed * forward;
+		glm::vec3 forward = glm::normalize(glm::vec3(Camera.GetDirection().x, 0.0f, Camera.GetDirection().z));
+		Camera.SetPosition(Camera.GetPosition() + cameraSpeed * forward);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 	{
-		glm::vec3 forward = glm::normalize(glm::vec3(camera.Direction.x, 0.0f, camera.Direction.z));
-		camera.CameraPos -= cameraSpeed * forward;
+		glm::vec3 forward = glm::normalize(glm::vec3(Camera.GetDirection().x, 0.0f, Camera.GetDirection().z));
+		Camera.SetPosition(Camera.GetPosition() - cameraSpeed * forward);
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		glm::vec3 right = glm::normalize(glm::cross(camera.Direction, camera.Up));
-		camera.CameraPos -= cameraSpeed * right;
+		glm::vec3 right = glm::normalize(glm::cross(Camera.GetDirection(), Camera.GetUpDir()));
+		Camera.SetPosition(Camera.GetPosition() - cameraSpeed * right);
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		glm::vec3 right = glm::normalize(glm::cross(camera.Direction, camera.Up));
-		camera.CameraPos += cameraSpeed * right;
+		glm::vec3 right = glm::normalize(glm::cross(Camera.GetDirection(), Camera.GetUpDir()));
+		Camera.SetPosition(Camera.GetPosition() + cameraSpeed * right);
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
-		glm::vec3 up = glm::normalize(camera.Up);
-		camera.CameraPos += cameraSpeed * up;
+		glm::vec3 up = glm::normalize(Camera.GetUpDir());
+		Camera.SetPosition(Camera.GetPosition() + cameraSpeed * up);
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 	{
-		glm::vec3 up = glm::normalize(camera.Up);
-		camera.CameraPos -= cameraSpeed * up;
+		glm::vec3 up = glm::normalize(Camera.GetUpDir());
+		Camera.SetPosition(Camera.GetPosition() - cameraSpeed * up);
 	}
 }
 
@@ -217,8 +217,6 @@ int main()
 		"assets/shaders/light.glsl.frag"
 	);
 
-	objShader.SetIntArray("u_Test", { 1, 2, 3 });
-
 
 	GLuint cubeVAO = CreateCubeVAO();
 
@@ -227,26 +225,25 @@ int main()
 
 	glm::mat4 projection = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-	glm::vec3& cameraPos = camera.CameraPos;
-	cameraPos += glm::vec3(0.0f, 2.0f, 0.0f);
+	Camera.SetPosition({ 0.0f, 0.0f, 2.0f });
 
 	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 	// Light uniforms.
 	lightShader.Bind();
 
-	lightShader.SetUniform3f("u_LightColor", lightColor.x, lightColor.y, lightColor.z);
-	lightShader.SetUniformMat4fv("u_Proj", projection);
+	lightShader.SetVec3("u_LightColor", lightColor);
+	lightShader.SetMat4("u_Proj", projection);
 
 	// Object uniforms.
 	objShader.Bind();
 	glm::mat4 model(1.0f);
 	model = glm::scale(model, glm::vec3(2.0f));
 	//model = glm::rotate(model, (float)glfwGetTime(), { 1.0f, 1.0f, 0.0f });
-	objShader.SetUniformMat4fv("u_Model", model);
+	objShader.SetMat4("u_Model", model);
 
-	objShader.SetUniform3f("u_LightColor", lightColor.x, lightColor.y, lightColor.z);
-	objShader.SetUniformMat4fv("u_Proj", projection);
+	objShader.SetVec3("u_LightColor", lightColor);
+	objShader.SetMat4("u_Proj", projection);
 
 
 	// Main loop.
@@ -254,7 +251,7 @@ int main()
 	{
 		ProcessInput(window);
 
-		glm::mat4 view = camera.GetViewMatrix();
+		glm::mat4 view = Camera.GetViewMatrix();
 		glBindVertexArray(cubeVAO);
 
 		// Draw light.
@@ -265,16 +262,16 @@ int main()
 		lightPos.z = 4 * std::cos(glfwGetTime());
 		lightModel = glm::translate(lightModel, lightPos);
 		lightModel = glm::scale(lightModel, glm::vec3(0.3f));
-		lightShader.SetUniformMat4fv("u_Model", lightModel);
-		lightShader.SetUniformMat4fv("u_View", view);
+		lightShader.SetMat4("u_Model", lightModel);
+		lightShader.SetMat4("u_View", view);
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// Draw object.
 		objShader.Bind();
-		objShader.SetUniform3f("u_ViewPos", cameraPos.x, cameraPos.y, cameraPos.z);
-		objShader.SetUniform3f("u_LightPos", lightPos.x, lightPos.y, lightPos.z);
-		objShader.SetUniformMat4fv("u_View", view);
+		objShader.SetVec3("u_ViewPos", Camera.GetPosition());
+		objShader.SetVec3("u_LightPos", lightPos);
+		objShader.SetMat4("u_View", view);
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -282,10 +279,12 @@ int main()
 		pitch = pitch > 89.0f ? 89.0f : pitch;
 		pitch = pitch < -89.0f ? -89.0f : pitch;
 
-		camera.Direction.x += std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-		camera.Direction.y += std::sin(glm::radians(pitch));
-		camera.Direction.z += std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-		camera.Direction = glm::normalize(camera.Direction);
+		glm::vec3 deltaDirection = glm::vec3(
+			std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
+			std::sin(glm::radians(pitch)),
+			std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch))
+		);
+		Camera.SetDirection(glm::normalize(Camera.GetDirection() + deltaDirection));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

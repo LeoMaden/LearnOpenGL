@@ -98,7 +98,7 @@ void Shader::SetMat4(const std::string& name, const glm::mat4& matrix)
 void Shader::SetIntArray(const std::string& name, const std::vector<int>& values)
 {
 	int loc = glGetUniformLocation(m_ProgramId, name.c_str());
-	glUniform1iv(loc, values.data, (const GLint*)values.size());
+	glUniform1iv(loc, values.size(), values.data());
 }
 
 
