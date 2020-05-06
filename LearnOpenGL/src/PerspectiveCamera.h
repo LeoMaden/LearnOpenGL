@@ -19,6 +19,8 @@ public:
 	void SetUpDir(const glm::vec3& up) { m_UpDir = up; UpdateViewProjectionMatrix(); }
 	glm::vec3& GetUpDir() { return m_UpDir; }
 
+	const glm::vec3& GetRightDirection() const { return m_RightDir; }
+
 
 	const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
 	const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
@@ -30,6 +32,7 @@ private:
 	glm::vec3 m_Position;
 	glm::vec3 m_Direction;
 	glm::vec3 m_UpDir;
+	glm::vec3 m_RightDir;
 
 	glm::mat4 m_ProjectionMatrix;
 	glm::mat4 m_ViewMatrix;

@@ -8,8 +8,9 @@
 
 #include "OpenGL/Shader.h"
 #include "OpenGL/Texture.h"
-#include "PerspectiveCamera.h"
+#include "PerspectiveCameraController.h"
 #include "Log.h"
+#include "Input.h"
 
 
 // Adjust viewport when window is resized.
@@ -18,45 +19,42 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-static PerspectiveCamera Camera(45.0f, 800.0f / 600.0f, 0.1f, 1000.0f);
-static float cameraSpeed = 0.05f;
-
 void ProcessInput(GLFWwindow* window)
 {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-	{
-		glfwSetWindowShouldClose(window, true);
-	}
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-	{
-		glm::vec3 forward = glm::normalize(glm::vec3(Camera.GetDirection().x, 0.0f, Camera.GetDirection().z));
-		Camera.SetPosition(Camera.GetPosition() + cameraSpeed * forward);
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-	{
-		glm::vec3 forward = glm::normalize(glm::vec3(Camera.GetDirection().x, 0.0f, Camera.GetDirection().z));
-		Camera.SetPosition(Camera.GetPosition() - cameraSpeed * forward);
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-	{
-		glm::vec3 right = glm::normalize(glm::cross(Camera.GetDirection(), Camera.GetUpDir()));
-		Camera.SetPosition(Camera.GetPosition() - cameraSpeed * right);
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-	{
-		glm::vec3 right = glm::normalize(glm::cross(Camera.GetDirection(), Camera.GetUpDir()));
-		Camera.SetPosition(Camera.GetPosition() + cameraSpeed * right);
-	}
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-	{
-		glm::vec3 up = glm::normalize(Camera.GetUpDir());
-		Camera.SetPosition(Camera.GetPosition() + cameraSpeed * up);
-	}
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-	{
-		glm::vec3 up = glm::normalize(Camera.GetUpDir());
-		Camera.SetPosition(Camera.GetPosition() - cameraSpeed * up);
-	}
+	/*if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+{
+	glfwSetWindowShouldClose(window, true);
+}
+if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+{
+	glm::vec3 forward = glm::normalize(glm::vec3(Camera.GetDirection().x, 0.0f, Camera.GetDirection().z));
+	Camera.SetPosition(Camera.GetPosition() + cameraSpeed * forward);
+}
+if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+{
+	glm::vec3 forward = glm::normalize(glm::vec3(Camera.GetDirection().x, 0.0f, Camera.GetDirection().z));
+	Camera.SetPosition(Camera.GetPosition() - cameraSpeed * forward);
+}
+if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+{
+	glm::vec3 right = glm::normalize(glm::cross(Camera.GetDirection(), Camera.GetUpDir()));
+	Camera.SetPosition(Camera.GetPosition() - cameraSpeed * right);
+}
+if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+{
+	glm::vec3 right = glm::normalize(glm::cross(Camera.GetDirection(), Camera.GetUpDir()));
+	Camera.SetPosition(Camera.GetPosition() + cameraSpeed * right);
+}
+if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+{
+	glm::vec3 up = glm::normalize(Camera.GetUpDir());
+	Camera.SetPosition(Camera.GetPosition() + cameraSpeed * up);
+}
+if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+{
+	glm::vec3 up = glm::normalize(Camera.GetUpDir());
+	Camera.SetPosition(Camera.GetPosition() - cameraSpeed * up);
+}*/
 }
 
 static float lastX = 400.0f, lastY = 300.0f;
@@ -199,6 +197,8 @@ int main()
 	LOG_INFO(glGetString(GL_RENDERER));
 	LOG_INFO(glGetString(GL_VERSION));
 
+	Input::Init(window);
+
 	glViewport(0, 0, 800, 600);
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 
@@ -207,6 +207,8 @@ int main()
 	glfwSetCursorPosCallback(window, MouseCallback);
 
 	glEnable(GL_DEPTH_TEST);
+
+	PerspectiveCameraController cameraController;
 
 	Shader objShader(
 		"assets/shaders/basic.glsl.vert",
@@ -224,8 +226,6 @@ int main()
 	glm::vec3 lightPos;
 
 	glm::mat4 projection = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-
-	Camera.SetPosition({ 0.0f, 0.0f, 2.0f });
 
 	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
@@ -249,9 +249,9 @@ int main()
 	// Main loop.
 	while (!glfwWindowShouldClose(window))
 	{
-		ProcessInput(window);
+		cameraController.OnUpdate(1.0f / 60.0f);
 
-		glm::mat4 view = Camera.GetViewMatrix();
+		glm::mat4 view = cameraController.m_Camera.GetViewMatrix();
 		glBindVertexArray(cubeVAO);
 
 		// Draw light.
@@ -269,7 +269,7 @@ int main()
 
 		// Draw object.
 		objShader.Bind();
-		objShader.SetVec3("u_ViewPos", Camera.GetPosition());
+		objShader.SetVec3("u_ViewPos", cameraController.m_Camera.GetPosition());
 		objShader.SetVec3("u_LightPos", lightPos);
 		objShader.SetMat4("u_View", view);
 
@@ -284,10 +284,15 @@ int main()
 			std::sin(glm::radians(pitch)),
 			std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch))
 		);
-		Camera.SetDirection(glm::normalize(Camera.GetDirection() + deltaDirection));
+		cameraController.m_Camera.SetDirection(glm::normalize(cameraController.m_Camera.GetDirection() + deltaDirection));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		if (Input::IsKeyDown(GLFW_KEY_ESCAPE))
+		{
+			glfwSetWindowShouldClose(window, true);
+		}
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
