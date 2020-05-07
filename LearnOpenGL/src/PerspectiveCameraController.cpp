@@ -2,6 +2,9 @@
 #include "Input.h"
 #include "GLFW/glfw3.h"
 
+#include "Log.h"
+
+#include <functional>
 
 PerspectiveCameraController::PerspectiveCameraController(PerspectiveCamera camera)
 	: m_Camera(camera), m_CameraPosition(camera.GetPosition())
@@ -15,25 +18,25 @@ void PerspectiveCameraController::OnUpdate(float ts)
 	if (Input::IsKeyDown(GLFW_KEY_W))
 	{
 		m_CameraPosition.x += m_CameraDirection.x * m_CameraSpeed * ts;
-		m_CameraPosition.y += m_CameraDirection.y * m_CameraSpeed * ts;
+		//m_CameraPosition.y += m_CameraDirection.y * m_CameraSpeed * ts;
 		m_CameraPosition.z += m_CameraDirection.z * m_CameraSpeed * ts;
 	}
 	if (Input::IsKeyDown(GLFW_KEY_S))
 	{
 		m_CameraPosition.x -= m_CameraDirection.x * m_CameraSpeed * ts;
-		m_CameraPosition.y -= m_CameraDirection.y * m_CameraSpeed * ts;
+		//m_CameraPosition.y -= m_CameraDirection.y * m_CameraSpeed * ts;
 		m_CameraPosition.z -= m_CameraDirection.z * m_CameraSpeed * ts;
 	}
 	if (Input::IsKeyDown(GLFW_KEY_A))
 	{
 		m_CameraPosition.x -= m_CameraRightDir.x * m_CameraSpeed * ts;
-		m_CameraPosition.y -= m_CameraRightDir.y * m_CameraSpeed * ts;
+		//m_CameraPosition.y -= m_CameraRightDir.y * m_CameraSpeed * ts;
 		m_CameraPosition.z -= m_CameraRightDir.z * m_CameraSpeed * ts;
 	}
 	if (Input::IsKeyDown(GLFW_KEY_D))
 	{
 		m_CameraPosition.x += m_CameraRightDir.x * m_CameraSpeed * ts;
-		m_CameraPosition.y += m_CameraRightDir.y * m_CameraSpeed * ts;
+		//m_CameraPosition.y += m_CameraRightDir.y * m_CameraSpeed * ts;
 		m_CameraPosition.z += m_CameraRightDir.z * m_CameraSpeed * ts;
 	}
 	if (Input::IsKeyDown(GLFW_KEY_SPACE))
@@ -50,4 +53,35 @@ void PerspectiveCameraController::OnUpdate(float ts)
 	}
 
 	m_Camera.SetPosition(m_CameraPosition);
+}
+
+void PerspectiveCameraController::OnEvent(Event& e)
+{
+	EventDispatcher dispatcher(e);
+
+	dispatcher.Dispatch<MouseMovedEvent>([this](auto& handler) { return this->OnMouseMoved(handler); });
+}
+
+bool PerspectiveCameraController::OnMouseMoved(MouseMovedEvent& e)
+{
+	float deltaX = e.GetXPos() - m_LastMouseX;
+	float deltaY = -(e.GetYPos() - m_LastMouseY);
+
+	m_LastMouseX = e.GetXPos();
+	m_LastMouseY = e.GetYPos();
+
+	m_Yaw += deltaX * m_LookSensitivity;
+	m_Pitch += deltaY * m_LookSensitivity;
+
+	m_Pitch = m_Pitch > 89.0f ? 89.0f : m_Pitch;
+	m_Pitch = m_Pitch < -89.0f ? -89.0f : m_Pitch;
+
+	m_CameraDirection.x = std::cos(glm::radians(m_Yaw)) * std::cos(glm::radians(m_Pitch));
+	m_CameraDirection.y = std::sin(glm::radians(m_Pitch));
+	m_CameraDirection.z = std::sin(glm::radians(m_Yaw)) * std::cos(glm::radians(m_Pitch));
+
+	m_Camera.SetDirection(m_CameraDirection);
+	m_CameraRightDir = m_Camera.GetRightDirection();
+
+	return true;
 }

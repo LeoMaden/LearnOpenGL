@@ -11,6 +11,7 @@
 #include "PerspectiveCameraController.h"
 #include "Log.h"
 #include "Input.h"
+#include "OpenGL/Debug.h"
 
 
 // Adjust viewport when window is resized.
@@ -60,20 +61,20 @@ if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 static float lastX = 400.0f, lastY = 300.0f;
 static float pitch = 0.0f, yaw = -90.0f;
 
-void MouseCallback(GLFWwindow* window, double xpos, double ypos)
-{
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
-	lastX = xpos;
-	lastY = ypos;
-
-	const float sensitivity = 0.15f;
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw += xoffset;
-	pitch += yoffset;
-}
+//void MouseCallback(GLFWwindow* window, double xpos, double ypos)
+//{
+//	float xoffset = xpos - lastX;
+//	float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+//	lastX = xpos;
+//	lastY = ypos;
+//
+//	const float sensitivity = 0.15f;
+//	xoffset *= sensitivity;
+//	yoffset *= sensitivity;
+//
+//	yaw += xoffset;
+//	pitch += yoffset;
+//}
 
 static GLuint CreateCubeVBO()
 {
@@ -167,6 +168,13 @@ static GLuint CreateCubeVAO()
 	return VAO;
 }
 
+static PerspectiveCameraController cameraController;
+
+static void Callback(Event& e)
+{
+	cameraController.OnEvent(e);
+}
+
 
 int main()
 {
@@ -203,12 +211,16 @@ int main()
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 
 	glfwSwapInterval(1);
+
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(window, MouseCallback);
 
 	glEnable(GL_DEPTH_TEST);
 
-	PerspectiveCameraController cameraController;
+
+	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xPos, double yPos) {
+		MouseMovedEvent e(xPos, yPos);
+		Callback(e);
+	});
 
 	Shader objShader(
 		"assets/shaders/basic.glsl.vert",
@@ -251,7 +263,7 @@ int main()
 	{
 		cameraController.OnUpdate(1.0f / 60.0f);
 
-		glm::mat4 view = cameraController.m_Camera.GetViewMatrix();
+		glm::mat4 view = cameraController.GetCamera().GetViewMatrix();
 		glBindVertexArray(cubeVAO);
 
 		// Draw light.
@@ -269,22 +281,11 @@ int main()
 
 		// Draw object.
 		objShader.Bind();
-		objShader.SetVec3("u_ViewPos", cameraController.m_Camera.GetPosition());
+		objShader.SetVec3("u_ViewPos", cameraController.GetCamera().GetPosition());
 		objShader.SetVec3("u_LightPos", lightPos);
 		objShader.SetMat4("u_View", view);
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-		pitch = pitch > 89.0f ? 89.0f : pitch;
-		pitch = pitch < -89.0f ? -89.0f : pitch;
-
-		glm::vec3 deltaDirection = glm::vec3(
-			std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch)),
-			std::sin(glm::radians(pitch)),
-			std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch))
-		);
-		cameraController.m_Camera.SetDirection(glm::normalize(cameraController.m_Camera.GetDirection() + deltaDirection));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
