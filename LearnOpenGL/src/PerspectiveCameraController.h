@@ -8,13 +8,14 @@
 class PerspectiveCameraController
 {
 public:
-	PerspectiveCameraController(PerspectiveCamera camera = PerspectiveCamera(60.0f, 1280.0f / 720.0f, 0.1f, 1000.0f));
+	PerspectiveCameraController(PerspectiveCamera camera = PerspectiveCamera(glm::radians(60.0f), 1280.0f / 720.0f, 0.1f, 1000.0f));
 
 	void OnUpdate(float ts);
 	void OnEvent(Event& e);
 
-	//PerspectiveCamera& GetCamera() { return m_Camera; }
 	const PerspectiveCamera& GetCamera() const { return m_Camera; }
+
+	void SetPosition(const glm::vec3& position) { m_CameraPosition = position; m_Camera.SetPosition(position); }
 
 private:
 	bool OnMouseMoved(MouseMovedEvent& e);

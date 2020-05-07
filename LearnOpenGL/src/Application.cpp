@@ -20,62 +20,6 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-void ProcessInput(GLFWwindow* window)
-{
-	/*if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-{
-	glfwSetWindowShouldClose(window, true);
-}
-if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-{
-	glm::vec3 forward = glm::normalize(glm::vec3(Camera.GetDirection().x, 0.0f, Camera.GetDirection().z));
-	Camera.SetPosition(Camera.GetPosition() + cameraSpeed * forward);
-}
-if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-{
-	glm::vec3 forward = glm::normalize(glm::vec3(Camera.GetDirection().x, 0.0f, Camera.GetDirection().z));
-	Camera.SetPosition(Camera.GetPosition() - cameraSpeed * forward);
-}
-if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-{
-	glm::vec3 right = glm::normalize(glm::cross(Camera.GetDirection(), Camera.GetUpDir()));
-	Camera.SetPosition(Camera.GetPosition() - cameraSpeed * right);
-}
-if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-{
-	glm::vec3 right = glm::normalize(glm::cross(Camera.GetDirection(), Camera.GetUpDir()));
-	Camera.SetPosition(Camera.GetPosition() + cameraSpeed * right);
-}
-if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-{
-	glm::vec3 up = glm::normalize(Camera.GetUpDir());
-	Camera.SetPosition(Camera.GetPosition() + cameraSpeed * up);
-}
-if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-{
-	glm::vec3 up = glm::normalize(Camera.GetUpDir());
-	Camera.SetPosition(Camera.GetPosition() - cameraSpeed * up);
-}*/
-}
-
-static float lastX = 400.0f, lastY = 300.0f;
-static float pitch = 0.0f, yaw = -90.0f;
-
-//void MouseCallback(GLFWwindow* window, double xpos, double ypos)
-//{
-//	float xoffset = xpos - lastX;
-//	float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
-//	lastX = xpos;
-//	lastY = ypos;
-//
-//	const float sensitivity = 0.15f;
-//	xoffset *= sensitivity;
-//	yoffset *= sensitivity;
-//
-//	yaw += xoffset;
-//	pitch += yoffset;
-//}
-
 static GLuint CreateCubeVBO()
 {
 	float vertices[] = {
@@ -186,7 +130,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true); 
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1280, 720, "LearnOpenGL", NULL, NULL);
 
 	// Check window has been created successfully.
 	ASSERT(window, "Error creating GLFW window");
@@ -207,7 +151,7 @@ int main()
 
 	Input::Init(window);
 
-	glViewport(0, 0, 800, 600);
+	glViewport(0, 0, 1280, 720);
 	glfwSetFramebufferSizeCallback(window, FramebufferSizeCallback);
 
 	glfwSwapInterval(1);
@@ -235,7 +179,8 @@ int main()
 	GLuint cubeVAO = CreateCubeVAO();
 
 	//glm::vec3 lightPos(1.5f, 2.0f, 2.5f)
-	glm::vec3 lightPos;
+	glm::vec3 lightPos(1.0f, 2.0f, -2.5f);
+	cameraController.SetPosition({ 0.0f, 0.0f, 3.0f }); 
 
 	glm::mat4 projection = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
@@ -245,37 +190,47 @@ int main()
 	lightShader.Bind();
 
 	lightShader.SetVec3("u_LightColor", lightColor);
-	lightShader.SetMat4("u_Proj", projection);
 
 	// Object uniforms.
 	objShader.Bind();
 	glm::mat4 model(1.0f);
 	model = glm::scale(model, glm::vec3(2.0f));
-	//model = glm::rotate(model, (float)glfwGetTime(), { 1.0f, 1.0f, 0.0f });
+
 	objShader.SetMat4("u_Model", model);
-
 	objShader.SetVec3("u_LightColor", lightColor);
-	objShader.SetMat4("u_Proj", projection);
 
+	objShader.SetVec3("u_Material.Ambient", { 1.0f, 0.5f, 0.31f });
+	objShader.SetVec3("u_Material.Diffuse", { 1.0f, 0.5f, 0.31f });
+	objShader.SetVec3("u_Material.Specular", { 0.5f, 0.5f, 0.5f });
+	objShader.SetFloat("u_Material.Shininess", 32.0f);
+
+	float lastFrameTime = 0.0f;
+	float currentFrameTime = 0.0f;
 
 	// Main loop.
 	while (!glfwWindowShouldClose(window))
 	{
-		cameraController.OnUpdate(1.0f / 60.0f);
+		currentFrameTime = glfwGetTime();
+		float ts = currentFrameTime - lastFrameTime;
+		lastFrameTime = currentFrameTime;
 
-		glm::mat4 view = cameraController.GetCamera().GetViewMatrix();
+		LOG_INFO("Frame time: {0:.2f}ms ({1:.0f} fps)", 1000*ts, 1.0f / ts);
+
+		cameraController.OnUpdate(ts);
+
+		glm::mat4 viewProjection = cameraController.GetCamera().GetViewProjectionMatrix();
 		glBindVertexArray(cubeVAO);
 
 		// Draw light.
 		lightShader.Bind();
 		glm::mat4 lightModel(1.0f);
-		lightPos.x = 4 * std::sin(glfwGetTime());
-		lightPos.y = 1.5f;
-		lightPos.z = 4 * std::cos(glfwGetTime());
+		//lightPos.x = 4 * std::sin(glfwGetTime());
+		//lightPos.y = 1.5f;
+		//lightPos.z = 4 * std::cos(glfwGetTime());
 		lightModel = glm::translate(lightModel, lightPos);
 		lightModel = glm::scale(lightModel, glm::vec3(0.3f));
 		lightShader.SetMat4("u_Model", lightModel);
-		lightShader.SetMat4("u_View", view);
+		lightShader.SetMat4("u_ViewProjection", viewProjection);
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -283,7 +238,7 @@ int main()
 		objShader.Bind();
 		objShader.SetVec3("u_ViewPos", cameraController.GetCamera().GetPosition());
 		objShader.SetVec3("u_LightPos", lightPos);
-		objShader.SetMat4("u_View", view);
+		objShader.SetMat4("u_ViewProjection", viewProjection);
 
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
