@@ -179,30 +179,29 @@ int main()
 	GLuint cubeVAO = CreateCubeVAO();
 
 	//glm::vec3 lightPos(1.5f, 2.0f, 2.5f)
-	glm::vec3 lightPos(1.0f, 2.0f, -2.5f);
+	glm::vec3 lightPos(1.0f, 3.5f, 4.0f);
 	cameraController.SetPosition({ 0.0f, 0.0f, 3.0f }); 
-
-	glm::mat4 projection = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-
-	glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 	// Light uniforms.
 	lightShader.Bind();
-
-	lightShader.SetVec3("u_LightColor", lightColor);
+	lightShader.SetVec3("u_LightColor", { 1.0f, 1.0f, 1.0f });
 
 	// Object uniforms.
 	objShader.Bind();
 	glm::mat4 model(1.0f);
 	model = glm::scale(model, glm::vec3(2.0f));
-
 	objShader.SetMat4("u_Model", model);
-	objShader.SetVec3("u_LightColor", lightColor);
 
-	objShader.SetVec3("u_Material.Ambient", { 1.0f, 0.5f, 0.31f });
-	objShader.SetVec3("u_Material.Diffuse", { 1.0f, 0.5f, 0.31f });
-	objShader.SetVec3("u_Material.Specular", { 0.5f, 0.5f, 0.5f });
-	objShader.SetFloat("u_Material.Shininess", 32.0f);
+	objShader.SetVec3("u_Material.Ambient", { 0.24725, 0.1995, 0.0745 });
+	objShader.SetVec3("u_Material.Diffuse", { 0.75164, 0.60648, 0.22648 });
+	objShader.SetVec3("u_Material.Specular", { 0.628281, 0.555802, 0.366065 });
+	objShader.SetFloat("u_Material.Shininess", 0.4*128);
+
+	objShader.SetVec3("u_Light.Position", lightPos);
+
+	objShader.SetVec3("u_Light.Ambient", glm::vec3(0.2f));
+	objShader.SetVec3("u_Light.Diffuse", glm::vec3(0.6f));
+	objShader.SetVec3("u_Light.Specular", glm::vec3(1.0f));
 
 	float lastFrameTime = 0.0f;
 	float currentFrameTime = 0.0f;
@@ -214,7 +213,7 @@ int main()
 		float ts = currentFrameTime - lastFrameTime;
 		lastFrameTime = currentFrameTime;
 
-		LOG_INFO("Frame time: {0:.2f}ms ({1:.0f} fps)", 1000*ts, 1.0f / ts);
+		//LOG_INFO("Frame time: {0:.2f}ms ({1:.0f} fps)", 1000*ts, 1.0f / ts);
 
 		cameraController.OnUpdate(ts);
 

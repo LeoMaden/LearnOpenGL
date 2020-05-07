@@ -64,6 +64,14 @@ void PerspectiveCameraController::OnEvent(Event& e)
 
 bool PerspectiveCameraController::OnMouseMoved(MouseMovedEvent& e)
 {
+	if (m_FirstMove)
+	{
+		m_LastMouseX = e.GetXPos();
+		m_LastMouseY = e.GetYPos();
+		m_FirstMove = false;
+		return true;
+	}
+
 	float deltaX = e.GetXPos() - m_LastMouseX;
 	float deltaY = -(e.GetYPos() - m_LastMouseY);
 

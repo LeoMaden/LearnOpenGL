@@ -27,8 +27,9 @@ private:
 	glm::vec3 m_CameraUpDir;
 	glm::vec3 m_CameraRightDir;
 
-	float m_Pitch = 0.0f, m_Yaw = 0.0f;
+	float m_Pitch = 0.0f, m_Yaw = -90.0f;
 	float m_LastMouseX = 0.0f, m_LastMouseY = 0.0f;
+	bool m_FirstMove = true;
 
 	float m_CameraSpeed = 5.0f;
 	float m_LookSensitivity = 0.15f;
