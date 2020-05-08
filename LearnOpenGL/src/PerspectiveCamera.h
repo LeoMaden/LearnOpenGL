@@ -28,7 +28,18 @@ public:
 	void UpdateViewProjectionMatrix();
 	const glm::mat4& GetViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
 
+	const float GetFov() const { return m_Fov; }
+	const float GetAspectRatio() const { return m_AspectRatio; }
+	const float GetNearPlaneDist() const { return m_NearPlane; }
+	const float GetFarPlaneDist() const { return m_FarPlane; }
+
+	void SetFov(float fov) { m_Fov = fov; SetPerspective(fov, m_AspectRatio, m_NearPlane, m_FarPlane); }
 private:
+	float m_Fov;
+	float m_AspectRatio;
+	float m_NearPlane;
+	float m_FarPlane;
+
 	glm::vec3 m_Position;
 	glm::vec3 m_Direction;
 	glm::vec3 m_UpDir;

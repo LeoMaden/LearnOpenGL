@@ -14,6 +14,7 @@
 #include "OpenGL/Debug.h"
 
 
+
 // Adjust viewport when window is resized.
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -166,6 +167,11 @@ int main()
 
 	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xPos, double yPos) {
 		MouseMovedEvent e(xPos, yPos);
+		Callback(e);
+	});
+
+	glfwSetScrollCallback(window, [](GLFWwindow* window, double xOffset, double yOffset) {
+		MouseScrolledEvent e(xOffset, yOffset);
 		Callback(e);
 	});
 

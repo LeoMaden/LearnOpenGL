@@ -60,6 +60,7 @@ void PerspectiveCameraController::OnEvent(Event& e)
 	EventDispatcher dispatcher(e);
 
 	dispatcher.Dispatch<MouseMovedEvent>([this](auto& handler) { return this->OnMouseMoved(handler); });
+	dispatcher.Dispatch<MouseScrolledEvent>([this](auto& handler) { return this->OnMouseScrolled(handler); });
 }
 
 bool PerspectiveCameraController::OnMouseMoved(MouseMovedEvent& e)
@@ -90,6 +91,18 @@ bool PerspectiveCameraController::OnMouseMoved(MouseMovedEvent& e)
 
 	m_Camera.SetDirection(m_CameraDirection);
 	m_CameraRightDir = m_Camera.GetRightDirection();
+
+	return true;
+}
+
+bool PerspectiveCameraController::OnMouseScrolled(MouseScrolledEvent& e)
+{
+	float newFov = glm::degrees(m_Camera.GetFov()) - (e.GetYOffset() * m_ZoomSensitivity);
+
+	newFov = newFov > 60.0f ? 60.0f : newFov;
+	newFov = newFov < 15.0f ? 15.0f : newFov;
+
+	m_Camera.SetFov(glm::radians(newFov));
 
 	return true;
 }

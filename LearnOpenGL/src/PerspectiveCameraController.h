@@ -2,6 +2,7 @@
 #include "PerspectiveCamera.h"
 #include "Events/Event.h"
 #include "Events/MouseMovedEvent.h"
+#include "Events/MouseScrolledEvent.h"
 
 #include <glm/glm.hpp>
 
@@ -19,6 +20,7 @@ public:
 
 private:
 	bool OnMouseMoved(MouseMovedEvent& e);
+	bool OnMouseScrolled(MouseScrolledEvent& e);
 
 private:
 	PerspectiveCamera m_Camera; 
@@ -33,4 +35,5 @@ private:
 
 	float m_CameraSpeed = 5.0f;
 	float m_LookSensitivity = 0.15f;
+	float m_ZoomSensitivity = 5.0f;
 };
